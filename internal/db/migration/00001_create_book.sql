@@ -1,0 +1,10 @@
+-- +goose Up
+CREATE TABLE book
+(
+    id    BIGSERIAL PRIMARY KEY,
+    title text NOT NULL,
+    author text NOT NULL
+);
+
+-- +goose Down
+DROP TABLE book;

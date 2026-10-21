@@ -1,0 +1,14 @@
+﻿version: "2"
+sql:
+  - engine: "postgresql"
+    queries:
+      - "internal/db/query/book.sql"
+    schema:
+      - "internal/db/migration/00001_create_book.sql"
+    gen:
+      go:
+        package: "codegen"
+        out: "internal/db/codegen"
+        sql_package: "pgx/v5"
+        emit_pointers_for_null_types: true
+        emit_interface: true
