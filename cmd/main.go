@@ -18,14 +18,14 @@ func run(ctx context.Context) error {
 	var repo codegen.Querier = codegen.New(conn)
 
 	// start from an empty table on every run
-	deleted, err := repo.DeleteAllBooks(ctx)
+	deletedCount, err := repo.DeleteAllBooks(ctx)
 	if err != nil {
 		return err
 	}
-	log.Printf("deleted %d books", deleted)
+	log.Printf("deleted %d books", deletedCount)
 
 	// create a book
-	insertedBook, err := repo.CreateBook(ctx, codegen.CreateBookParams{
+	book, err := repo.CreateBook(ctx, codegen.CreateBookParams{
 		Title:  "The Go Programming Language",
 		Author: "Alan Donovan & Brian Kernighan",
 	})
@@ -33,40 +33,40 @@ func run(ctx context.Context) error {
 		return err
 	}
 	log.Println("Created books...")
-	log.Println(insertedBook)
+	log.Println(book)
 
 	// get the book we just inserted
-	fetchedBook, err := repo.GetBook(ctx, insertedBook.ID)
+	book, err = repo.GetBook(ctx, book.ID)
 	if err != nil {
 		return err
 	}
-	log.Println(fetchedBook)
+	log.Println(book)
 
 	// list books filtered by author; nil fields are not filtered on
-	kernighanBooks, err := repo.ListBooks(ctx, codegen.ListBooksParams{
+	books, err := repo.ListBooks(ctx, codegen.ListBooksParams{
 		Author: new("kernighan"),
 	})
 	if err != nil {
 		return err
 	}
 	log.Println("Listing books...")
-	log.Println(kernighanBooks)
+	log.Println(books)
 
 	// update the book
 	err = repo.UpdateBook(ctx, codegen.UpdateBookParams{
-		ID:     insertedBook.ID,
+		ID:     book.ID,
 		Title:  "The C Programming Language",
 		Author: "Brian Kernighan & Dennis Ritchie",
 	})
 	if err != nil {
 		return err
 	}
-	kernighanBooks, err = repo.ListBooks(ctx, codegen.ListBooksParams{
+	books, err = repo.ListBooks(ctx, codegen.ListBooksParams{
 		Author: new("kernighan"),
 	})
 	if err == nil {
 		log.Println("Updated books...")
-		log.Println(kernighanBooks)
+		log.Println(books)
 	}
 
 	return err

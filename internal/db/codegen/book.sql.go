@@ -11,7 +11,7 @@ import (
 
 const createBook = `-- name: CreateBook :one
 INSERT INTO public.book (title, author)
-VALUES ($1, $2) RETURNING id, title, author, blurb
+VALUES ($1, $2) RETURNING id, title, author
 `
 
 type CreateBookParams struct {
@@ -22,12 +22,7 @@ type CreateBookParams struct {
 func (q *Queries) CreateBook(ctx context.Context, arg CreateBookParams) (Book, error) {
 	row := q.db.QueryRow(ctx, createBook, arg.Title, arg.Author)
 	var i Book
-	err := row.Scan(
-		&i.ID,
-		&i.Title,
-		&i.Author,
-		&i.Blurb,
-	)
+	err := row.Scan(&i.ID, &i.Title, &i.Author)
 	return i, err
 }
 
@@ -56,7 +51,7 @@ func (q *Queries) DeleteBook(ctx context.Context, id int64) error {
 }
 
 const getBook = `-- name: GetBook :one
-SELECT id, title, author, blurb
+SELECT id, title, author
 FROM public.book
 WHERE id = $1 LIMIT 1
 `
@@ -64,17 +59,12 @@ WHERE id = $1 LIMIT 1
 func (q *Queries) GetBook(ctx context.Context, id int64) (Book, error) {
 	row := q.db.QueryRow(ctx, getBook, id)
 	var i Book
-	err := row.Scan(
-		&i.ID,
-		&i.Title,
-		&i.Author,
-		&i.Blurb,
-	)
+	err := row.Scan(&i.ID, &i.Title, &i.Author)
 	return i, err
 }
 
 const listBooks = `-- name: ListBooks :many
-SELECT id, title, author, blurb
+SELECT id, title, author
 FROM public.book
 WHERE ($1::text IS NULL OR title ILIKE '%' || $1::text || '%')
   AND ($2::text IS NULL OR author ILIKE '%' || $2::text || '%')
@@ -95,12 +85,7 @@ func (q *Queries) ListBooks(ctx context.Context, arg ListBooksParams) ([]Book, e
 	var items []Book
 	for rows.Next() {
 		var i Book
-		if err := rows.Scan(
-			&i.ID,
-			&i.Title,
-			&i.Author,
-			&i.Blurb,
-		); err != nil {
+		if err := rows.Scan(&i.ID, &i.Title, &i.Author); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
