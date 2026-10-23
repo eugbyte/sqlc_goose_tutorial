@@ -10,6 +10,7 @@ import (
 
 type Querier interface {
 	CreateBook(ctx context.Context, arg CreateBookParams) (Book, error)
+	DeleteAllBooks(ctx context.Context) (int64, error)
 	DeleteBook(ctx context.Context, id int64) error
 	GetBook(ctx context.Context, id int64) (Book, error)
 	ListBooks(ctx context.Context, arg ListBooksParams) ([]Book, error)

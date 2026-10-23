@@ -1,5 +1,5 @@
 -- +goose Up
-CREATE TABLE book
+CREATE TABLE public.book
 (
     id    BIGSERIAL PRIMARY KEY,
     title text NOT NULL,
@@ -7,4 +7,4 @@ CREATE TABLE book
 );
 
 -- +goose Down
-DROP TABLE book;
+DROP TABLE public.book;

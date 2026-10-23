@@ -3,54 +3,57 @@ package main
 import (
 	"context"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/eugbyte/sqlc_goose_tutorial/internal/db"
 	"github.com/eugbyte/sqlc_goose_tutorial/internal/db/codegen"
 )
 
-func run() error {
-	ctx := context.Background()
-
+func run(ctx context.Context) error {
 	conn := db.OpenDbConnection(ctx, "user=postgres password=postgres dbname=book_demo sslmode=disable")
 	defer conn.Close(ctx)
 
-	var queries *codegen.Queries = codegen.New(conn)
+	var repo codegen.Querier = codegen.New(conn)
 
-	// list all books
-	books, err := queries.ListBooks(ctx, codegen.ListBooksParams{})
+	// start from an empty table on every run
+	deleted, err := repo.DeleteAllBooks(ctx)
 	if err != nil {
 		return err
 	}
-	log.Println(books)
+	log.Printf("deleted %d books", deleted)
 
 	// create a book
-	insertedBook, err := queries.CreateBook(ctx, codegen.CreateBookParams{
+	insertedBook, err := repo.CreateBook(ctx, codegen.CreateBookParams{
 		Title:  "The Go Programming Language",
 		Author: "Alan Donovan & Brian Kernighan",
 	})
 	if err != nil {
 		return err
 	}
+	log.Println("Created books...")
 	log.Println(insertedBook)
 
 	// get the book we just inserted
-	fetchedBook, err := queries.GetBook(ctx, insertedBook.ID)
+	fetchedBook, err := repo.GetBook(ctx, insertedBook.ID)
 	if err != nil {
 		return err
 	}
 	log.Println(fetchedBook)
 
 	// list books filtered by author; nil fields are not filtered on
-	kernighanBooks, err := queries.ListBooks(ctx, codegen.ListBooksParams{
+	kernighanBooks, err := repo.ListBooks(ctx, codegen.ListBooksParams{
 		Author: new("kernighan"),
 	})
 	if err != nil {
 		return err
 	}
+	log.Println("Listing books...")
 	log.Println(kernighanBooks)
 
 	// update the book
-	err = queries.UpdateBook(ctx, codegen.UpdateBookParams{
+	err = repo.UpdateBook(ctx, codegen.UpdateBookParams{
 		ID:     insertedBook.ID,
 		Title:  "The C Programming Language",
 		Author: "Brian Kernighan & Dennis Ritchie",
@@ -58,13 +61,24 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	kernighanBooks, err = repo.ListBooks(ctx, codegen.ListBooksParams{
+		Author: new("kernighan"),
+	})
+	if err == nil {
+		log.Println("Updated books...")
+		log.Println(kernighanBooks)
+	}
 
-	// delete the book
-	return queries.DeleteBook(ctx, insertedBook.ID)
+	return err
 }
 
 func main() {
-	if err := run(); err != nil {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	if err := run(ctx); err != nil {
 		log.Fatal(err)
 	}
+
+	<-ctx.Done()
 }

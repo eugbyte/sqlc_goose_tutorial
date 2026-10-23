@@ -10,8 +10,8 @@ import (
 )
 
 const createBook = `-- name: CreateBook :one
-INSERT INTO book (title, author)
-VALUES ($1, $2) RETURNING id, title, author
+INSERT INTO public.book (title, author)
+VALUES ($1, $2) RETURNING id, title, author, blurb
 `
 
 type CreateBookParams struct {
@@ -22,13 +22,31 @@ type CreateBookParams struct {
 func (q *Queries) CreateBook(ctx context.Context, arg CreateBookParams) (Book, error) {
 	row := q.db.QueryRow(ctx, createBook, arg.Title, arg.Author)
 	var i Book
-	err := row.Scan(&i.ID, &i.Title, &i.Author)
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.Author,
+		&i.Blurb,
+	)
 	return i, err
+}
+
+const deleteAllBooks = `-- name: DeleteAllBooks :execrows
+DELETE
+FROM public.book
+`
+
+func (q *Queries) DeleteAllBooks(ctx context.Context) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteAllBooks)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const deleteBook = `-- name: DeleteBook :exec
 DELETE
-FROM book
+FROM public.book
 WHERE id = $1
 `
 
@@ -38,21 +56,26 @@ func (q *Queries) DeleteBook(ctx context.Context, id int64) error {
 }
 
 const getBook = `-- name: GetBook :one
-SELECT id, title, author
-FROM book
+SELECT id, title, author, blurb
+FROM public.book
 WHERE id = $1 LIMIT 1
 `
 
 func (q *Queries) GetBook(ctx context.Context, id int64) (Book, error) {
 	row := q.db.QueryRow(ctx, getBook, id)
 	var i Book
-	err := row.Scan(&i.ID, &i.Title, &i.Author)
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.Author,
+		&i.Blurb,
+	)
 	return i, err
 }
 
 const listBooks = `-- name: ListBooks :many
-SELECT id, title, author
-FROM book
+SELECT id, title, author, blurb
+FROM public.book
 WHERE ($1::text IS NULL OR title ILIKE '%' || $1::text || '%')
   AND ($2::text IS NULL OR author ILIKE '%' || $2::text || '%')
 ORDER BY title
@@ -72,7 +95,12 @@ func (q *Queries) ListBooks(ctx context.Context, arg ListBooksParams) ([]Book, e
 	var items []Book
 	for rows.Next() {
 		var i Book
-		if err := rows.Scan(&i.ID, &i.Title, &i.Author); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.Author,
+			&i.Blurb,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -84,7 +112,7 @@ func (q *Queries) ListBooks(ctx context.Context, arg ListBooksParams) ([]Book, e
 }
 
 const updateBook = `-- name: UpdateBook :exec
-UPDATE book
+UPDATE public.book
 set title  = $2,
     author = $3
 WHERE id = $1

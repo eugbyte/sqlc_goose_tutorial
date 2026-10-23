@@ -8,9 +8,11 @@ create-migration:
 
 apply-migration:
 	goose -dir=internal/db/migration postgres "user=postgres password=postgres dbname=book_demo sslmode=disable" up
+	sqlc generate
 
 rollback-migration-to:
-	goose -dir=internal/db/migration postgres "user=postgres password=postgres dbname=book_demo sslmode=disable" down-to 123456
+	goose -dir=internal/db/migration postgres "user=postgres password=postgres dbname=book_demo sslmode=disable" down-to 00001
+	sqlc generate
 
 sqlc:
 	sqlc generate

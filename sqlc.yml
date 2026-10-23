@@ -4,7 +4,7 @@ sql:
     queries:
       - "internal/db/query/book.sql"
     schema:
-      - "internal/db/migration/00001_create_book.sql"
+      - "internal/db/migration"
     gen:
       go:
         package: "codegen"
